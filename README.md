@@ -16,12 +16,12 @@ pip install -r requirements.txt
 
 This repository offers numerous options and additional features to optimally configure it to your needs. Below is a list of all available features and their corresponding .env variable names. These variables can be modified in the included .env file.
 
-* ### Utilized Model
+### Utilized Model
 YOLOv8 offers a range of models catering to various accuracy-performance trade-offs. Among these, [`yolov8n.pt`](https://docs.ultralytics.com/models/yolov8/#supported-tasks-and-modes) is the most performance-focused, while [`yolov8x.pt`](https://docs.ultralytics.com/models/yolov8/#supported-tasks-and-modes) emphasizes accuracy. Intermediate models such as [`yolov8s`](https://docs.ultralytics.com/models/yolov8/#supported-tasks-and-modes), [`yolov8m`](https://docs.ultralytics.com/models/yolov8/#supported-tasks-and-modes), and [`yolov8l`](https://docs.ultralytics.com/models/yolov8/#supported-tasks-and-modes) progressively balance performance and accuracy. The aforementioned models are **[classification models](https://docs.ultralytics.com/tasks/detect/) only**. Additionally, the object classification supports **[segmentation models](https://docs.ultralytics.com/tasks/segment/)**, which have similar names but include '-seg' (e.g., `yolov8n-seg.pt`). Segmentation models provide the advantage of removing the background and overlapping objects for main color calculation, which will be detailed further in the color prediction feature description.
 
 The utilised model can be altered at `MODEL_NAME` .env variable.
 
-*  ### Queue Message Reader
+### Queue Message Reader
 The object classification system will automatically check for incoming messages and process them. If there is a queue build-up, it will continue to process media until the queue is empty. This functionality leverages the [`uugai-python-dynamic-queue`](https://pypi.org/project/uugai-python-dynamic-queue/) dependency. More information can be found in the corresponding [GitHub repository](https://github.com/uug-ai/uugai-python-dynamic-queue). Initialization is straightforward, as demonstrated in the code snippet below, which also lists the corresponding .env variables.
 
 ```Python
@@ -38,7 +38,7 @@ rabbitmq = RabbitMQ(
 message = rabbitmq.receive_message()
 ```
 
-* ### Kerberos Vault Integration
+### Kerberos Vault Integration
 The incoming messages provide the necessary information to retrieve media from the Kerberos Vault. The received media can then be easily written to a video file, allowing it to be used as input for the model. This functionality leverages the [`uugai-python-kerberos-vault`](https://pypi.org/project/uugai-python-dynamic-queue/) dependency. More information can be found in the corresponding [GitHub repository](https://github.com/uug-ai/uugai-python-kerberos-vault), and additional details about Kerberos Vault itself can be found here. Initialization is straightforward, as demonstrated in the code snippet below, which also lists the corresponding .env variables.
 
 ```Python
@@ -56,17 +56,17 @@ resp = kerberos_vault.retrieve_media(
 ```
 
 
-* ### Object Classification
+### Object Classification
 The primary focus of this repository is object classification, achieved using YOLO's pretrained classification or segmentation models as described in the 'utilized model' subsection. Based on your preferences, there are configurable parameters that modify the classification process. These parameters are divided into performance-based and application-based categories. The available parameters are listed below:
 
-* #### Performance-based .env Variables
+#### Performance-based .env Variables
 `MODEL_NAME`: As discussed in the 'utilized model' section, this parameter allows you to choose a model that balances performance and accuracy according to your needs. For more details, please refer to the earlier section.
 
 `CLASSIFICATION_FPS`: This parameter allows you to adjust the number of frames sent for classification. Lowering the FPS can improve performance by reducing the number of classifications required. However, setting the FPS too low may result in missing fast-moving objects and decreased tracking accuracy.
 
 `MAX_NUMBER_OF_PREDICTIONS`: This feature allows you to set a limit on the number of predictions performed, enabling you to shorten a video if desired. If no limit is needed, set this parameter to a high value.
 
-* #### Application-based .env Variables
+#### Application-based .env Variables
 `MIN_DISTANCE`: This parameter defines the minimum distance an object must travel before it is considered 'dynamic.' The distance is calculated as the sum of the distances between centroids for each classified frame. Note that this distance can be affected by shifting bounding boxes, especially for objects that are difficult to detect.
 
 `MIN_STATIC_DISTANCE`: This parameter also defines the minimum distance an object must travel before being marked as dynamic. However, this distance is measured as the Euclidean distance between the centroids of the first and last bounding boxes. While this method is not sensitive to shifting bounding boxes, it may not detect dynamic objects that start and end in the same location.
@@ -75,16 +75,7 @@ The primary focus of this repository is object classification, achieved using YO
 
 `ALLOWED_CLASSIFICATIONS`: This parameter encompasses the classification model's configuration, specifying the classes to be included for detection and those to be excluded. The selection of classes is model-dependent. For the default pretrained YOLOv8 models, an 'id' and 'class' table is provided below.
 
-<!DOCTYPE html>
 <html>
-<head>
-    <style>
-        table {
-            margin-left: auto;
-            margin-right: auto;
-        }
-    </style>
-</head>
 <body>
     <table border="1">
         <tr>
@@ -224,15 +215,15 @@ In most standard use-cases, the `ALLOWED_CLASSIFICATIONS` parameter would confor
 ALLOWED_CLASSIFICATIONS = "0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 26, 28"
 ```
 
-* ### Objects's Main Color Calculation
-The `FIND_DOMINANT_COLORS` environment variable enables the calculation of the main colors of detected objects. This feature uses the `[uugai-python-color-prediction](https://pypi.org/project/uugai-python-color-prediction/)` dependency to determine the primary colors. More information about its functionality and available parameters can be found in the corresponding `[GitHub repository](https://github.com/uug-ai/uugai-python-color-prediction)`. The main colors are saved in BGR and HLS formats, and they are also mapped to a string using a slightly customized version of the HSL-79 color naming system. Additional details about this color naming system can be found [here](https://www.chilliant.com/colournames.html).
+### Objects's Main Color Calculation
+The `FIND_DOMINANT_COLORS` environment variable enables the calculation of the main colors of detected objects. This feature uses the [`uugai-python-color-prediction`](https://pypi.org/project/uugai-python-color-prediction/) dependency to determine the primary colors. More information about its functionality and available parameters can be found in the corresponding [`GitHub repository`](https://github.com/uug-ai/uugai-python-color-prediction). The main colors are saved in BGR and HLS formats, and they are also mapped to a string using a slightly customized version of the HSL-79 color naming system. Additional details about this color naming system can be found [here](https://www.chilliant.com/colournames.html).
 
-The choice between a **classification** or **segmentation** model significantly impacts the performance of the main color calculation. For **classification models**, the color calculation includes everything inside the bounding box. This object can be cropped using a feature in the `[uugai-python-color-prediction](https://pypi.org/project/uugai-python-color-prediction/)` dependency. However, this method does not support off-centered objects or overlapping bounding boxes. **Segmentation models**, on the other hand, provide the necessary mask to isolate the object from the background and exclude any overlapping objects, with only a slight decrease in performance. Depending on the video quality, downsampling can be adjusted within the function call.
+The choice between a **classification** or **segmentation** model significantly impacts the performance of the main color calculation. For **classification models**, the color calculation includes everything inside the bounding box. This object can be cropped using a feature in the [`uugai-python-color-prediction`](https://pypi.org/project/uugai-python-color-prediction/) dependency. However, this method does not support off-centered objects or overlapping bounding boxes. **Segmentation models**, on the other hand, provide the necessary mask to isolate the object from the background and exclude any overlapping objects, with only a slight decrease in performance. Depending on the video quality, downsampling can be adjusted within the function call.
 
-* ### Several Other Features
+### Several Other Features
 Multiple additional features are available, each tailored to specific use-case scenarios. These encompass various **verbose** and **saving** functionalities.
  
-* #### Plotting
+#### Plotting
 In accordance with various use-case scenarios, the annotated frame can be visually represented through plotting. This functionality can be modified by adjusting the environment variable `PLOT`. In situations where visual representation is unnecessary, such as when solely focusing on retrieving data without graphical output, this variable can be set to false as follows: `PLOT = "False"`.
 
 The annotated frame displays the bounding boxes of detected objects, along with their primary colors when color detection is activated. These bounding boxes are color-coded: green for dynamic objects and red for static ones. Additionally, their trajectories are plotted, accompanied by their class and confidence score.
@@ -247,47 +238,50 @@ The generation of this image can be enabled by setting the environment variable 
 
 <p align="center"><img src="assets/images/bbox_example.jpg" width="800"></p>
 
-* #### Return JSON-Object Creation
+#### Return JSON-Object Creation
 This parameter is typically left enabled; however, there is an option to refrain from creating a JSON data object containing all the classification data. If this repository is solely used for performing visual inspection without any subsequent post-processing, the creation of the JSON-object can be disabled using `CREATE_RETURN_JSON = "False"`. Furthermore, you can customize the save path and decide whether to save this object by adjusting `SAVE_RETURN_JSON = "True"` and `RETURN_JSON_SAVEPATH = "path/to/your/json.json"`. The JSON-object is structered as follows:
 
-```JSON
+```
 {
-	"operation": "classify",
-	"data": {
-		"objectCount": int,
-		"properties": [str],
-		"details": [
-			{
-				"id": int,
-				"classified": str,
-				"distance": float,
-				"staticDistance": float,
-				"isStatic": bool,
-				"frameWidth": int,
-				"frameHeight": int,
-				"frame": int,
-				"frames": [int]
-				"occurence": int,
-				"traject": [[float]],
-				"trajectCentroids": [[float]],
-				"colorsBGR": [[[int]]],
-				"colorsHLS": [[[int]]],
-				"colorsStr": [[str]],
-				"colorStr": [[str, int]
-				"valid": true,
-				"w": 0,
-				"x": 0,
-				"y": 0
-			},
+"operation": "classify",
+"data": {
+    "objectCount": int,
+    "properties": [str],
+    "details": [
+        {
+        "id": int,
+        "classified": str,
+        "distance": float,
+        "staticDistance": float,
+        "isStatic": bool,
+        "frameWidth": int,
+        "frameHeight": int,
+        "frame": int,
+        "frames": [int]
+        "occurence": int,
+        "traject": [[float]],
+        "trajectCentroids": [[float]],
+        "colorsBGR": [[[int]]],
+        "colorsHLS": [[[int]]],
+        "colorsStr": [[str]],
+        "colorStr": [[str, int]
+        "valid": true,
+        "w": 0,
+        "x": 0,
+        "y": 0
+        }
+
+        ...
+]}}
 ```
 
-* #### Time Verbose
+#### Time Verbose
 The final feature involves the option to print out the processing time for the video file and its corresponding frames per second (FPS).
 
 ```
 Classification took: 22.1 seconds, at 5 fps.
 ```
 
-## License
+## License
 
-## Contribution
+## Contribution
