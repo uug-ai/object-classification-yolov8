@@ -25,7 +25,6 @@ COPY requirements.txt /ml/requirements.txt
 
 # Upgrade pip and install pip packages
 RUN python3 -m pip install --upgrade pip wheel && \
-    python3 -m pip install --no-cache-dir -r /usr/src/ultralytics/requirements.txt && \
     python3 -m pip install --no-cache-dir -r /ml/requirements.txt 
 
 # Create necessary directories
