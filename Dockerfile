@@ -6,7 +6,7 @@ ADD https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf \
     https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.Unicode.ttf \
     /root/.config/Ultralytics/
 
-# Install linux packages and clean up
+# Install linux packages and clean up (clean-up added, last line)
 RUN apt-get update && apt-get install --no-install-recommends -y \
     python3-pip git zip curl htop libgl1 libglib2.0-0 libpython3-dev gnupg g++ libusb-1.0-0 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -20,8 +20,13 @@ RUN git clone https://github.com/ultralytics/ultralytics -b main /usr/src/ultral
 # Add yolov8n.pt model
 ADD https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt /usr/src/ultralytics/
 
+# Copy requirements.txt including the needed python packages
+COPY requirements.txt /ml/requirements.txt
+
 # Upgrade pip and install pip packages
-RUN python3 -m pip install --upgrade pip wheel
+RUN python3 -m pip install --upgrade pip wheel && \
+    python3 -m pip install --no-cache-dir -r /usr/src/ultralytics/requirements.txt && \
+    python3 -m pip install --no-cache-dir -r /ml/requirements.txt 
 
 # Create necessary directories
 RUN mkdir -p /ml/data/input /ml/data/output
