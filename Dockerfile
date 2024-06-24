@@ -21,8 +21,7 @@ RUN git clone https://github.com/ultralytics/ultralytics -b main /usr/src/ultral
 ADD https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt /usr/src/ultralytics/
 
 # Upgrade pip and install pip packages
-RUN python3 -m pip install --upgrade pip wheel && \
-    python3 -m pip install --no-cache-dir -r /usr/src/ultralytics/requirements.txt
+RUN python3 -m pip install --upgrade pip wheel
 
 # Create necessary directories
 RUN mkdir -p /ml/data/input /ml/data/output
