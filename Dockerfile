@@ -1,7 +1,3 @@
-# Ultralytics YOLO 🚀, AGPL-3.0 license
-# Builds ultralytics/ultralytics:latest-cpu image on DockerHub https://hub.docker.com/r/ultralytics/ultralytics
-# Image is CPU-optimized for ONNX, OpenVINO and PyTorch YOLOv8 deployments
-
 # Use the official Python 3.10 slim-bookworm as base image
 FROM python:3.10-slim-bookworm
 
@@ -10,47 +6,31 @@ ADD https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf \
     https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.Unicode.ttf \
     /root/.config/Ultralytics/
 
-# Install linux packages
-# g++ required to build 'tflite_support' and 'lap' packages, libusb-1.0-0 required for 'tflite_support' package
-RUN apt update \
-    && apt install --no-install-recommends -y python3-pip git zip curl htop libgl1 libglib2.0-0 libpython3-dev gnupg g++ libusb-1.0-0
+# Install linux packages and clean up
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    python3-pip git zip curl htop libgl1 libglib2.0-0 libpython3-dev gnupg g++ libusb-1.0-0 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create working directory
 WORKDIR /usr/src/ultralytics
 
-# Copy contents
-# COPY . /usr/src/ultralytics  # git permission issues inside container
+# Clone the repository
 RUN git clone https://github.com/ultralytics/ultralytics -b main /usr/src/ultralytics
+
+# Add yolov8n.pt model
 ADD https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt /usr/src/ultralytics/
 
-# Remove python3.11/EXTERNALLY-MANAGED or use 'pip install --break-system-packages' avoid 'externally-managed-environment' Ubuntu nightly error
-# RUN rm -rf /usr/lib/python3.11/EXTERNALLY-MANAGED
+# Upgrade pip and install pip packages
+RUN python3 -m pip install --upgrade pip wheel && \
+    python3 -m pip install --no-cache-dir -r /usr/src/ultralytics/requirements.txt
 
-# Install pip packages
-RUN python3 -m pip install --upgrade pip wheel
-#RUN pip install --no-cache -e ".[export]" --extra-index-url https://download.pytorch.org/whl/cpu
+# Create necessary directories
+RUN mkdir -p /ml/data/input /ml/data/output
 
-# Run exports to AutoInstall packages
-#RUN yolo export model=tmp/yolov8n.pt format=edgetpu imgsz=32
-#RUN yolo export model=tmp/yolov8n.pt format=ncnn imgsz=32
-# Requires <= Python 3.10, bug with paddlepaddle==2.5.0 https://github.com/PaddlePaddle/X2Paddle/issues/991
-#RUN pip install --no-cache paddlepaddle>=2.6.0 x2paddle
-# Remove exported models
-#RUN rm -rf tmp
-
-# Install pip requirements
-COPY requirements.txt .
-#RUN python -m pip --timeout=1000 install -r requirements.txt
-#RUN python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
-RUN python -m pip install -r requirements.txt 
-# We have issues with nvidia drivers (we require cu118)
-RUN apt-get install -y wget
-
-RUN mkdir /ml
-RUN mkdir /ml/data
-RUN mkdir /ml/data/input
-RUN mkdir /ml/data/output
+# Set working directory
 WORKDIR /ml
+
+# Copy application code
 COPY . .
 
 # Environment variables
