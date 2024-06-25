@@ -37,7 +37,7 @@ WORKDIR /ml
 COPY . .
 
 # Environment variables
-ENV MEDIA_SAVEPATH "/ml/data/input"
+ENV MEDIA_SAVEPATH "/ml/data/input/video.mp4"
 
 # Model parameters
 ENV MODEL_NAME ""

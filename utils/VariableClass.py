@@ -39,6 +39,8 @@ class VariableClass:
 
         self.TIME_VERBOSE = os.getenv("TIME_VERBOSE") == "True"
 
+        self.LOGGING = os.getenv("LOGGING") == "True"
+
         self.CREATE_BBOX_FRAME = os.getenv("CREATE_BBOX_FRAME") == "True"
         self.SAVE_BBOX_FRAME = os.getenv("SAVE_BBOX_FRAME") == "True"
         self.BBOX_FRAME_SAVEPATH = os.getenv("BBOX_FRAME_SAVEPATH")

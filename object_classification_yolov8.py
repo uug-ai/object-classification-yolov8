@@ -31,6 +31,8 @@ var = VariableClass()
 
 
 # Initialize a message broker using the python_queue_reader package
+if var.LOGGING:
+    print('Initializing RabbitMQ')
 rabbitmq = RabbitMQ(
     queue_name = var.QUEUE_NAME, 
     target_queue_name = var.TARGET_QUEUE_NAME, 
@@ -40,6 +42,8 @@ rabbitmq = RabbitMQ(
     password = var.QUEUE_PASSWORD)
 
 # Initialize Kerberos Vault
+if var.LOGGING:
+    print('Initializing Kerberos Vault')
 kerberos_vault = KerberosVault(
     storage_uri = var.STORAGE_URI,
     storage_access_key = var.STORAGE_ACCESS_KEY,
@@ -48,7 +52,11 @@ kerberos_vault = KerberosVault(
 
 while True:
     # Receive message from the queue, and retrieve the media from the Kerberos Vault utilizing the message information.
+    if var.LOGGING:
+        print('Receiving message from RabbitMQ')
     message = rabbitmq.receive_message()
+    if var.LOGGING:
+        print('Retrieving media from Kerberos Vault')
     resp = kerberos_vault.retrieve_media(
         message = message, 
         media_type = 'video', 
@@ -62,11 +70,14 @@ while True:
     # Perform object classification on the media
     # initialise the yolo model, additionally use the device parameter to specify the device to run the model on.
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f'Using device: {device}')
     MODEL = YOLO(var.MODEL_NAME).to(device)
+    if var.LOGGING:
+        print(f'Using device: {device}')
 
 
     # Open video-capture/recording using the video-path. Throw FileNotFoundError if cap is unable to open.
+    if var.LOGGING:
+        print(f'Opening video file: {var.MEDIA_SAVEPATH}')
     cap = cv2.VideoCapture(var.MEDIA_SAVEPATH)
     if not cap.isOpened():
         FileNotFoundError('Unable to open video file')
@@ -109,6 +120,8 @@ while True:
     # Loop over the video frames, and perform object classification.
     # The classification process is done until the counter reaches the MAX_NUMBER_OF_PREDICTIONS or the last frame is reached.
     MAX_FRAME_NUMBER = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    if var.LOGGING:
+        print(f'Classifying frames')
     while (predicted_frames < var.MAX_NUMBER_OF_PREDICTIONS) and (frame_number < MAX_FRAME_NUMBER):
 
 
@@ -228,6 +241,8 @@ while True:
     # Depending on the CREATE_BBOX_FRAME parameter, the bbox_frame is annotated.
     # This is done using a custom annotation function.
     if var.CREATE_BBOX_FRAME:
+        if var.LOGGING:
+            print('Annotating bbox frame')
         bbox_frame = annotate_bbox_frame(
             bbox_frame = bbox_frame, 
             classification_object_list = classification_object_list)
@@ -237,6 +252,8 @@ while True:
     # Initialize the ReturnJSON object.
     # This creates a json object with the correct structure.
     if var.CREATE_RETURN_JSON:
+        if var.LOGGING:
+            print('Creating ReturnJSON object')
         return_json = ReturnJSON()
 
         # Depending on the user preference, the detected objects are filtered.
@@ -271,6 +288,8 @@ while True:
 
     # If the videowriter was active, the videowriter is released. 
     # Close the video-capture and destroy all windows.
+    if var.LOGGING:
+        print('Releasing video writer and closing video capture')
     video_out.release() if var.SAVE_VIDEO else None
     cap.release()
     cv2.destroyAllWindows()
