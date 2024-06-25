@@ -56,6 +56,8 @@ while True:
         print('Receiving message from RabbitMQ')
     message = rabbitmq.receive_message()
     if message == []:
+        if var.LOGGING:
+            print('No message received, waiting for 3 seconds')
         time.sleep(3)
         continue
     if var.LOGGING:
