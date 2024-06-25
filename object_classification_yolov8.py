@@ -55,6 +55,9 @@ while True:
     if var.LOGGING:
         print('Receiving message from RabbitMQ')
     message = rabbitmq.receive_message()
+    if message == []:
+        time.sleep(3)
+        continue
     if var.LOGGING:
         print('Retrieving media from Kerberos Vault')
     resp = kerberos_vault.retrieve_media(
