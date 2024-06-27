@@ -57,6 +57,7 @@ class VariableClass:
         self.OUTPUT_MEDIA_SAVEPATH = os.getenv("OUTPUT_MEDIA_SAVEPATH")
 
         self.FIND_DOMINANT_COLORS = os.getenv("FIND_DOMINANT_COLORS") == "True"
+        self.COLOR_PREDICTION_INTERVAL = int(os.getenv("COLOR_PREDICTION_INTERVAL"))
 
         # Classification parameters
         self.CLASSIFICATION_FPS = int(os.getenv("CLASSIFICATION_FPS"))

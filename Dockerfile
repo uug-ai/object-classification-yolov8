@@ -37,10 +37,10 @@ WORKDIR /ml
 COPY . .
 
 # Environment variables
-ENV MEDIA_SAVEPATH "/ml/data/input/video.mp4"
+ENV MEDIA_SAVEPATH "/ml/data/input/input_video.mp4"
 
 # Model parameters
-ENV MODEL_NAME ""
+ENV MODEL_NAME "yolov8n-seg.pt"
 
 # Queue parameters
 ENV QUEUE_NAME "" 
@@ -56,23 +56,24 @@ ENV STORAGE_ACCESS_KEY ""
 ENV STORAGE_SECRET_KEY ""
 
 # Feature parameters
-ENV PLOT ""
+ENV PLOT "False"
 
-ENV SAVE_VIDEO ""
+ENV SAVE_VIDEO "False"
 ENV OUTPUT_MEDIA_SAVEPATH "/ml/data/output/output_video.mp4"
 
-ENV CREATE_BBOX_FRAME ""
-ENV SAVE_BBOX_FRAME ""
-ENV BBOX_FRAME_SAVEPATH "/ml/data/output/bbox_frame.jpg"
+ENV CREATE_BBOX_FRAME "False"
+ENV SAVE_BBOX_FRAME "False"
+ENV BBOX_FRAME_SAVEPATH "/ml/data/output/output_bbox_frame.jpg"
 
-ENV CREATE_RETURN_JSON ""
-ENV SAVE_RETURN_JSON ""
-ENV RETURN_JSON_SAVEPATH "/ml/data/output/return_json.json"
+ENV CREATE_RETURN_JSON "False"
+ENV SAVE_RETURN_JSON "False"
+ENV RETURN_JSON_SAVEPATH "/ml/data/output/output_json.json"
 
-ENV TIME_VERBOSE ""
-ENV LOGGING ""
+ENV TIME_VERBOSE "True"
+ENV LOGGING "True"
 
-ENV FIND_DOMINANT_COLORS ""
+ENV FIND_DOMINANT_COLORS "False"
+ENV COLOR_PREDICTION_INTERVAL "1"
 
 # Classification parameters
 ENV CLASSIFICATION_FPS ""
@@ -81,7 +82,7 @@ ENV MAX_NUMBER_OF_PREDICTIONS ""
 ENV MIN_DISTANCE ""
 ENV MIN_STATIC_DISTANCE ""
 ENV MIN_DETECTIONS ""
-ENV ALLOWED_CLASSIFICATIONS "0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 26, 28"
+ENV ALLOWED_CLASSIFICATIONS "0, 1, 2, 3, 5, 7, 14, 15, 16, 24, 26, 28"
 
 
 # Run the application

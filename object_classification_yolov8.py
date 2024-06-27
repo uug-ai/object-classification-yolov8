@@ -10,10 +10,11 @@ from utils.VariableClass import VariableClass
 from utils.ColorDetector import FindObjectColors
 from utils.ClassificationObject import ClassificationObject
 from utils.AnnotateFrame import annotate_frame, annotate_bbox_frame
-from utils.ClassificationObjectFunctions import create_classification_object, edit_classification_object
+from utils.ClassificationObjectFunctions import create_classification_object, edit_classification_object, find_classification_object
 
 
 # External imports
+import os
 import cv2
 import time
 import json
@@ -32,7 +33,7 @@ var = VariableClass()
 
 # Initialize a message broker using the python_queue_reader package
 if var.LOGGING:
-    print('Initializing RabbitMQ')
+    print('a) Initializing RabbitMQ')
 rabbitmq = RabbitMQ(
     queue_name = var.QUEUE_NAME, 
     target_queue_name = var.TARGET_QUEUE_NAME, 
@@ -43,7 +44,7 @@ rabbitmq = RabbitMQ(
 
 # Initialize Kerberos Vault
 if var.LOGGING:
-    print('Initializing Kerberos Vault')
+    print('b) Initializing Kerberos Vault')
 kerberos_vault = KerberosVault(
     storage_uri = var.STORAGE_URI,
     storage_access_key = var.STORAGE_ACCESS_KEY,
@@ -53,7 +54,7 @@ kerberos_vault = KerberosVault(
 while True:
     # Receive message from the queue, and retrieve the media from the Kerberos Vault utilizing the message information.
     if var.LOGGING:
-        print('Receiving message from RabbitMQ')
+        print('1) Receiving message from RabbitMQ')
     message = rabbitmq.receive_message()
     if message == []:
         if var.LOGGING:
@@ -61,7 +62,7 @@ while True:
         time.sleep(3)
         continue
     if var.LOGGING:
-        print('Retrieving media from Kerberos Vault')
+        print('2) Retrieving media from Kerberos Vault')
     resp = kerberos_vault.retrieve_media(
         message = message, 
         media_type = 'video', 
@@ -70,6 +71,10 @@ while True:
 
     if var.TIME_VERBOSE:
         start_time = time.time()
+        total_time_class_prediction = 0
+        total_time_color_prediction = 0
+        total_time_processing = 0
+        total_time_postprocessing = 0
 
 
     # Perform object classification on the media
@@ -77,12 +82,12 @@ while True:
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     MODEL = YOLO(var.MODEL_NAME).to(device)
     if var.LOGGING:
-        print(f'Using device: {device}')
+        print(f'3) Using device: {device}')
 
 
     # Open video-capture/recording using the video-path. Throw FileNotFoundError if cap is unable to open.
     if var.LOGGING:
-        print(f'Opening video file: {var.MEDIA_SAVEPATH}')
+        print(f'4) Opening video file: {var.MEDIA_SAVEPATH}')
     cap = cv2.VideoCapture(var.MEDIA_SAVEPATH)
     if not cap.isOpened():
         FileNotFoundError('Unable to open video file')
@@ -126,7 +131,7 @@ while True:
     # The classification process is done until the counter reaches the MAX_NUMBER_OF_PREDICTIONS or the last frame is reached.
     MAX_FRAME_NUMBER = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     if var.LOGGING:
-        print(f'Classifying frames')
+        print(f'5) Classifying frames')
     while (predicted_frames < var.MAX_NUMBER_OF_PREDICTIONS) and (frame_number < MAX_FRAME_NUMBER):
 
 
@@ -149,17 +154,23 @@ while True:
             # persist=True -> The tracking results are stored in the model.
             # persist should be kept True, as this provides unique IDs for each detection.
             # More information about the tracking results via https://docs.ultralytics.com/reference/engine/results/
+            if var.TIME_VERBOSE:
+                start_time_class_prediction = time.time()
             results = MODEL.track(
                 source=frame, 
                 persist=True, 
                 verbose=False, 
                 conf=var.CLASSIFICATION_THRESHOLD, 
                 classes=var.ALLOWED_CLASSIFICATIONS)
+            if var.TIME_VERBOSE:
+                total_time_class_prediction += time.time() - start_time_class_prediction
 
             # Check if the results are not None,
             # Otherwise, the postprocessing should not be done.
             # Iterate over the detected objects and their masks.
             if results is not None:
+                if var.TIME_VERBOSE:
+                    start_time_processing = time.time()
                 # Loop over boxes and masks.
                 # If no masks are found, meaning the model used is not a segmentation model, the mask is set to None.
                 for box, mask in zip(results[0].boxes, results[0].masks or [None] * len(results[0].boxes)):
@@ -178,20 +189,28 @@ while True:
                     object_conf = float(box.conf)
                     object_trajectory = box.xyxy.tolist()[0]
                     object_mask = np.int32(mask.xy[0].tolist()) if mask is not None else None
-                    
-
-                    # Depending on the FIND_DOMINANT_COLORS parameter, the dominant colors are found.
-                    if var.FIND_DOMINANT_COLORS:
-                        main_colors_bgr, main_colors_hls, main_colors_str = color_detector.crop_and_detect(
-                            frame=frame,
-                            trajectory=object_trajectory,
-                            mask_polygon=object_mask)
 
                     
                     # Check if the id is already in the classification_object_ids list.
                     # If it is, edit the classification object.
                     # Otherwise, create a new classification object.
                     if object_id in classification_object_ids:
+                        classification_object = find_classification_object(classification_object_list, object_id)
+
+                        # Calculate the dominant colors of the object if the FIND_DOMINANT_COLORS parameter is set to True.
+                        # And the object has been detected a multiple of COLOR_PREDICTION_INTERVAL times.
+                        if var.FIND_DOMINANT_COLORS and classification_object.occurences % var.COLOR_PREDICTION_INTERVAL == 0:
+                            if var.TIME_VERBOSE:
+                                start_time_color_prediction = time.time()
+                            main_colors_bgr, main_colors_hls, main_colors_str = color_detector.crop_and_detect(
+                            frame=frame,
+                            trajectory=object_trajectory,
+                            mask_polygon=object_mask)
+                            if var.TIME_VERBOSE:
+                                total_time_color_prediction += time.time() - start_time_color_prediction
+                        else:
+                            main_colors_bgr, main_colors_hls, main_colors_str = None, None, None
+
                         edit_classification_object(
                             id=object_id,
                             object_name=object_name,
@@ -199,11 +218,24 @@ while True:
                             trajectory=object_trajectory,
                             frame_number=frame_number,
                             classification_object_list=classification_object_list,
-                            colors_bgr=main_colors_bgr if var.FIND_DOMINANT_COLORS else None,
-                            colors_hls=main_colors_hls if var.FIND_DOMINANT_COLORS else None,
-                            colors_str=main_colors_str if var.FIND_DOMINANT_COLORS else None)
+                            colors_bgr=main_colors_bgr,
+                            colors_hls=main_colors_hls,
+                            colors_str=main_colors_str)
 
                     else:
+                        # Calculate the dominant colors of the object if the FIND_DOMINANT_COLORS parameter is set to True.
+                        if var.FIND_DOMINANT_COLORS:
+                            if var.TIME_VERBOSE:
+                                start_time_color_prediction = time.time()
+                            main_colors_bgr, main_colors_hls, main_colors_str = color_detector.crop_and_detect(
+                            frame=frame,
+                            trajectory=object_trajectory,
+                            mask_polygon=object_mask)
+                            if var.TIME_VERBOSE:
+                                total_time_color_prediction += time.time() - start_time_color_prediction
+                        else:
+                            main_colors_bgr, main_colors_hls, main_colors_str = None, None, None
+
                         classification_object = create_classification_object(
                             id=object_id,
                             first_object_name=object_name,
@@ -212,13 +244,12 @@ while True:
                             first_frame=frame_number,
                             frame_width=int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                             frame_height=int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-                            first_colors_bgr=main_colors_bgr if var.FIND_DOMINANT_COLORS else None,
-                            first_colors_hls=main_colors_hls if var.FIND_DOMINANT_COLORS else None,
-                            first_colors_str=main_colors_str if var.FIND_DOMINANT_COLORS else None)
+                            first_colors_bgr=main_colors_bgr,
+                            first_colors_hls=main_colors_hls,
+                            first_colors_str=main_colors_str)
                         
                         classification_object_ids.append(object_id)
                         classification_object_list.append(classification_object)
-
 
             # Depending on the SAVE_VIDEO or PLOT parameter, the frame is annotated.
             # This is done using a custom annotation function.
@@ -243,11 +274,16 @@ while True:
         frame_number += 1
 
 
+        if var.TIME_VERBOSE:
+            total_time_processing += time.time() - start_time_processing
+            start_time_postprocessing = time.time()
+
+
     # Depending on the CREATE_BBOX_FRAME parameter, the bbox_frame is annotated.
     # This is done using a custom annotation function.
     if var.CREATE_BBOX_FRAME:
         if var.LOGGING:
-            print('Annotating bbox frame')
+            print('6) Annotating bbox frame')
         bbox_frame = annotate_bbox_frame(
             bbox_frame = bbox_frame, 
             classification_object_list = classification_object_list)
@@ -258,7 +294,7 @@ while True:
     # This creates a json object with the correct structure.
     if var.CREATE_RETURN_JSON:
         if var.LOGGING:
-            print('Creating ReturnJSON object')
+            print('7) Creating ReturnJSON object')
         return_json = ReturnJSON()
 
         # Depending on the user preference, the detected objects are filtered.
@@ -268,6 +304,8 @@ while True:
             if classification_object.occurences >= var.MIN_DETECTIONS:
                 filtered_classification_object_list.append(classification_object)
                 return_json.add_detected_object(classification_object)
+        if var.LOGGING:
+            print(f"\t - {len(classification_object_list)} objects where detected. Of which {len(filtered_classification_object_list)} objects where detected more than {var.MIN_DETECTIONS} times.") 
     
 
     # Depending on the SAVE_RETURN_JSON parameter, the return_json object is saved locally.
@@ -276,6 +314,10 @@ while True:
 
     # Depending on the SAVE_BBOX_FRAME parameter, the bbox_frame is saved locally.
     cv2.imwrite(var.BBOX_FRAME_SAVEPATH, bbox_frame) if var.SAVE_BBOX_FRAME else None
+
+
+    if var.TIME_VERBOSE:
+        total_time_postprocessing += time.time() - start_time_postprocessing
 
     
     # Depending on the TARGET_QUEUE_NAME parameter, the resulting JSON-object is sent to the target queue.
@@ -288,13 +330,19 @@ while True:
     
 
     # Depending on the TIME_VERBOSE parameter, the time it took to classify the objects is printed.
-    print(f'Classification took: {round(time.time() - start_time, 1)} seconds, at {var.CLASSIFICATION_FPS} fps.') if var.TIME_VERBOSE else None
+    if var.TIME_VERBOSE:
+        print(f'\t - Classification took: {round(time.time() - start_time, 1)} seconds, @ {var.CLASSIFICATION_FPS} fps.') 
+        print(f'\t\t - {round(total_time_class_prediction, 2)}s for class prediction')
+        print(f'\t\t - {round(total_time_processing, 2)}s processing of which {round(total_time_color_prediction, 2)}s for color prediction') 
+        print(f'\t\t - {round(total_time_postprocessing, 2)}s postprocessing')
+        print(f'\t - Original video: {round(cap.get(cv2.CAP_PROP_FRAME_COUNT)/cap.get(cv2.CAP_PROP_FPS), 1)} seconds, @ {round(cap.get(cv2.CAP_PROP_FPS), 1)} fps @ {int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))}. File size of {round(os.path.getsize(var.MEDIA_SAVEPATH)/1024**2, 1)} MB')
 
 
     # If the videowriter was active, the videowriter is released. 
     # Close the video-capture and destroy all windows.
     if var.LOGGING:
-        print('Releasing video writer and closing video capture')
+        print('8) Releasing video writer and closing video capture')
+        print("\n\n")
     video_out.release() if var.SAVE_VIDEO else None
     cap.release()
     cv2.destroyAllWindows()
