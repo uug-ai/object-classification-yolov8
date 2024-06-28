@@ -39,6 +39,8 @@ class VariableClass:
 
         self.TIME_VERBOSE = os.getenv("TIME_VERBOSE") == "True"
 
+        self.LOGGING = os.getenv("LOGGING") == "True"
+
         self.CREATE_BBOX_FRAME = os.getenv("CREATE_BBOX_FRAME") == "True"
         self.SAVE_BBOX_FRAME = os.getenv("SAVE_BBOX_FRAME") == "True"
         self.BBOX_FRAME_SAVEPATH = os.getenv("BBOX_FRAME_SAVEPATH")
@@ -55,6 +57,7 @@ class VariableClass:
         self.OUTPUT_MEDIA_SAVEPATH = os.getenv("OUTPUT_MEDIA_SAVEPATH")
 
         self.FIND_DOMINANT_COLORS = os.getenv("FIND_DOMINANT_COLORS") == "True"
+        self.COLOR_PREDICTION_INTERVAL = int(os.getenv("COLOR_PREDICTION_INTERVAL"))
 
         # Classification parameters
         self.CLASSIFICATION_FPS = int(os.getenv("CLASSIFICATION_FPS"))

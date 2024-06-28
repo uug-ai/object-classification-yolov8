@@ -295,6 +295,8 @@ The `FIND_DOMINANT_COLORS` environment variable enables the calculation of the m
 
 The choice between a **classification** or **segmentation** model significantly impacts the performance of the main color calculation. For **classification models**, the color calculation includes everything inside the bounding box. This object can be cropped using a feature in the [`uugai-python-color-prediction`](https://pypi.org/project/uugai-python-color-prediction/) dependency. However, this method does not support off-centered objects or overlapping bounding boxes. **Segmentation models**, on the other hand, provide the necessary mask to isolate the object from the background and exclude any overlapping objects, with only a slight decrease in performance. Depending on the video quality, downsampling can be adjusted within the function call.
 
+The `COLOR_PREDICTION_INTERVAL` environment variable allows you to adjust the interval for color prediction. Setting this variable to 1 means that the dominant colors are calculated for every frame, ensuring high accuracy. Higher integer values reduce the frequency of dominant color calculations, which increases efficiency but may decrease accuracy.
+
 ### Several Other Features
 Multiple additional features are available, each tailored to specific use-case scenarios. These encompass various **verbose** and **saving** functionalities.
  
