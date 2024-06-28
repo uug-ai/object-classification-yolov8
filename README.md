@@ -352,11 +352,41 @@ This parameter is typically left enabled; however, there is an option to refrain
 ]}}
 ```
 
-#### Time Verbose
-The final feature involves the option to print out the processing time for the video file and its corresponding frames per second (FPS).
+#### Time Verbose and Logging
+The final two environment variables influence the verbosity options and are split into two categories: `TIME_VERBOSE` and `LOGGING`.
+
+The `LOGGING` environment variable controls the output messages depending on the application's usage. The output can be one of the following:
+
+* If no message is received from RabbitMQ:
 
 ```
-Classification took: 22.1 seconds, at 5 fps.
+1) Receiving message from RabbitMQ
+No message received, waiting for 3 seconds
+...
+```
+
+* If messages are being processed:
+```
+1) Receiving message from RabbitMQ
+2) Retrieving media from Kerberos Vault
+3) Using device: cpu
+4) Opening video file: data/input/in_video.mp4
+5) Classifying frames
+6) Annotating bbox frame
+7) Creating ReturnJSON object
+         - 0 objects where detected. Of which 0 objects where detected more than 10 times.
+         ... (optional time verbose output)
+8) Releasing video writer and closing video capture
+```
+
+The `TIME_VERBOSE` environment variable includes extra time-related verbosity options, adding the following lines to the output:
+
+```
+- Classification took: 9.6 seconds, @ 2 fps.
+        - 5.13s for class prediction
+        - 17.82s processing of which 0s for color prediction
+        - 0.02s postprocessing
+- Original video: 29.9 seconds, @ 10.0 fps @ 2304x1296. File size of 3.9881591796875 MB
 ```
 
 ## License
