@@ -399,4 +399,9 @@ The `TIME_VERBOSE` environment variable includes extra time-related verbosity op
 
 ## License
 
-## Contribution
+## Contributors
+This project exists thanks to all the people who contribute.
+
+<a href="https://github.com/uug-ai/object-classification-yolov8/agent/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=uug-ai/object-classification-yolov8" />
+</a>
