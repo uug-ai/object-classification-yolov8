@@ -4,6 +4,7 @@ from itertools import chain
 import numpy as np
 import os
 
+
 class ClassificationObject:
     def __init__(self, id: str, first_object_name: str, first_object_conf: float, first_trajectory: list[float], first_frame: int, frame_width: int, frame_height: int, first_object_colors_bgr: np.ndarray = None, first_object_colors_hls: np.ndarray = None, first_object_colors_str: np.ndarray = None):
         """
@@ -66,9 +67,12 @@ class ClassificationObject:
         self.trajectory = [first_trajectory]
         self.trajectory_centroids = [self.find_centroid(first_trajectory)]
 
-        self.object_colors_bgr = [first_object_colors_bgr] if first_object_colors_bgr is not None else []
-        self.object_colors_hls = [first_object_colors_hls] if first_object_colors_hls is not None else []
-        self.object_colors_str = [first_object_colors_str] if first_object_colors_str is not None else []
+        self.object_colors_bgr = [
+            first_object_colors_bgr] if first_object_colors_bgr is not None else []
+        self.object_colors_hls = [
+            first_object_colors_hls] if first_object_colors_hls is not None else []
+        self.object_colors_str = [
+            first_object_colors_str] if first_object_colors_str is not None else []
         self.object_color_str = []
 
         # Instance variables inherited from the YOLOv3 pipeline, have no use here.
@@ -76,7 +80,6 @@ class ClassificationObject:
         self.w = 0
         self.x = 0
         self.y = 0
-
 
     def add_frame_number(self, new_frame_number: int):
         """ Add the new frame number to the frames list.
@@ -89,7 +92,6 @@ class ClassificationObject:
         # +1 the occurences.
         self.add_occurence()
 
-
     def add_object_name(self, new_object_name: str):
         """ Add the new object name to the object_names list.
         :param new_object_name: The new object name.
@@ -99,7 +101,6 @@ class ClassificationObject:
         # Append to object_names list.
         self.object_names.append(new_object_name)
         self.edit_object_name()
-
 
     def edit_object_name(self):
         """ Edit most common final classification name, when a new object name is added.
@@ -111,7 +112,6 @@ class ClassificationObject:
         # object name with most instances becomes the 'best' classification name.
         self.object_name = word_counts.most_common(1)[0][0]
 
-
     def add_object_conf(self, new_object_conf: float):
         """ Add the new object's confidence score to the object_confs list.
         :param new_object_conf: The confidence score of the new object name.
@@ -120,7 +120,6 @@ class ClassificationObject:
 
         # Append to object_confs list.
         self.object_confs.append(new_object_conf)
-
 
     def add_trajectory(self, new_bbox_coordinates: list[float]):
         """ Add bounding box coordinates to the trajectory list.
@@ -137,7 +136,6 @@ class ClassificationObject:
         # Add centroid coordinates to the trajectory_centroids list.
         self.add_trajectory_centroid(centroid_coordinates)
 
-
     def find_centroid(self, bbox_coordinates: list[float]) -> list[float]:
         """ Calculate centroid information about bbox.
         :param bbox_coordinates: The bbox coordinates of the detected object's position
@@ -147,7 +145,6 @@ class ClassificationObject:
         """
 
         return [(bbox_coordinates[0]+bbox_coordinates[2])/2, (bbox_coordinates[1]+bbox_coordinates[3])/2]
-
 
     def add_trajectory_centroid(self, new_trajectory_centroid: list[float]):
         """ Add centroid coordinates to the trajectory-centroids list.
@@ -161,14 +158,12 @@ class ClassificationObject:
         self.add_distance()
         self.edit_static_distance()
 
-
     def add_occurence(self):
         """ +1 the occurences.
 
         """
 
         self.occurences += 1
-
 
     def add_distance(self):
         """ Calculate the Euclidean distance travelled from previous centroid to new centroid. Add to total distance travelled.
@@ -183,7 +178,6 @@ class ClassificationObject:
             (new_centroid[0]-previous_centroid[0])**2 + (new_centroid[1]-previous_centroid[1])**2)
         # Add newly calculated distance to total distance travelled.
         self.distance += new_distance
-
 
     def edit_static_distance(self):
         """ Calculate the Euclidean distance travelled from first centroid to last centroid. Add to total distance travelled.
@@ -200,7 +194,6 @@ class ClassificationObject:
         self.static_distance = static_distance
         self.edit_is_static()
 
-
     def edit_is_static(self):
         """ Check if static distance is smaller than a certain threshold.
 
@@ -211,7 +204,6 @@ class ClassificationObject:
         else:
             self.is_static = False
 
-
     def add_object_colors_bgr(self, new_object_colors_bgr: np.ndarray):
         """ Add the new object's colors to the object_colors_bgr list.
         :param new_object_colors_bgr: The new object's colors of the object.
@@ -221,7 +213,6 @@ class ClassificationObject:
         # Append to object_colors_bgr list.
         self.object_colors_bgr.append(new_object_colors_bgr)
 
-
     def add_object_colors_hls(self, new_object_colors_hls: np.ndarray):
         """ Add the new object's colors to the object_colors_hls list.
         :param new_object_colors_hls: The new object's colors of the object.
@@ -230,7 +221,6 @@ class ClassificationObject:
 
         # Append to object_colors_hls list.
         self.object_colors_hls.append(new_object_colors_hls)
-
 
     def add_object_colors_str(self, new_object_colors_str: np.ndarray):
         """ Add the new object's colors to the object_colors_str list.
@@ -242,14 +232,17 @@ class ClassificationObject:
         self.object_colors_str.append(new_object_colors_str)
         self.edit_object_color_str()
 
-
     def edit_object_color_str(self):
         """ Edit most common final colors, when a new object name is added.
 
         """
-        
+
         # Count the instances of each color.
         flattened_list = list(chain(*self.object_colors_str))
         word_counts = Counter(flattened_list)
         # object colors with most instances become the 'best' object colors.
-        self.object_color_str = word_counts.most_common(3)
+        most_common = word_counts.most_common(3)
+
+        # Get colors from most common list.
+        colors = [color[0] for color in most_common]
+        self.object_color_str = colors

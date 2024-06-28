@@ -2,7 +2,6 @@ from utils.ClassificationObject import ClassificationObject
 import json
 
 
-
 class ReturnJSON:
     def __init__(self):
         """ Initialize a ReturnJSON class object, this makes sure the final json object has the correct structure.
@@ -21,7 +20,6 @@ class ReturnJSON:
                                   'details': self.details
                               }
                               }
-
 
     def add_detected_object(self, det_obj: ClassificationObject):
         """ Adds a detected object to the ReturnJSON class object.
@@ -55,13 +53,12 @@ class ReturnJSON:
                         }
         self.return_object['data']['details'].append(details_dict)
 
-
     def batch_add_detected_object(self, det_obj_list: list[ClassificationObject]):
         """ Batch add detected_objects from a ClassificationObject list.
         :param det_obj_list: List containing the ClassificationObjects whose characteristics should be saved in the ReturnJSON object.
 
         """
-        
+
         for det_obj in det_obj_list:
             self.add_detected_object(det_obj)
 
