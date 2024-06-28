@@ -297,6 +297,11 @@ The choice between a **classification** or **segmentation** model significantly 
 
 The `COLOR_PREDICTION_INTERVAL` environment variable allows you to adjust the interval for color prediction. Setting this variable to 1 means that the dominant colors are calculated for every frame, ensuring high accuracy. Higher integer values reduce the frequency of dominant color calculations, which increases efficiency but may decrease accuracy.
 
+Additionally, the `MIN_CLUSTERS` and `MAX_CLUSTERS` environment variables allow you to adjust the number of dominant colors to be found. For example, setting `MIN_CLUSTERS` to 1 and `MAX_CLUSTERS` to 8 enables the function to find the optimal number of clusters using the inertias of KMeans clustering, along with an elbow point finder to identify the best fit. This method is the most accurate but requires calculating many clusters for each object.
+
+Alternatively, setting `MIN_CLUSTERS` and `MAX_CLUSTERS` to the same value dictates the exact number of dominant colors to calculate. For example, setting both to 3 will find exactly 3 main clusters. This approach is more performant but may be less accurate if the actual number of dominant colors differs from the specified value.
+
+
 ### Several Other Features
 Multiple additional features are available, each tailored to specific use-case scenarios. These encompass various **verbose** and **saving** functionalities.
  
@@ -374,7 +379,7 @@ No message received, waiting for 3 seconds
 5) Classifying frames
 6) Annotating bbox frame
 7) Creating ReturnJSON object
-         - 0 objects where detected. Of which 0 objects where detected more than 10 times.
+         - 14 objects where detected. Of which 11 objects where detected more than 5 times.
          ... (optional time verbose output)
 8) Releasing video writer and closing video capture
 ```
@@ -382,11 +387,14 @@ No message received, waiting for 3 seconds
 The `TIME_VERBOSE` environment variable includes extra time-related verbosity options, adding the following lines to the output:
 
 ```
-- Classification took: 9.6 seconds, @ 2 fps.
-        - 5.13s for class prediction
-        - 17.82s processing of which 0s for color prediction
-        - 0.02s postprocessing
-- Original video: 29.9 seconds, @ 10.0 fps @ 2304x1296. File size of 3.9881591796875 MB
+- Classification took: 20.4 seconds, @ 5 fps.
+        - 2.05s for preprocessing and initialisation
+        - 18.35s for processing of which:
+                - 12.48s for class prediction
+                - 1.31s for color prediction
+                - 4.56s for other processing
+        - 0.0s for postprocessing
+- Original video: 29.7 seconds, @ 25.0 fps @ 1280x720. File size of 1.2 MB
 ```
 
 ## License

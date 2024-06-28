@@ -34,6 +34,7 @@ var = VariableClass()
 # Initialize a message broker using the python_queue_reader package
 if var.LOGGING:
     print('a) Initializing RabbitMQ')
+
 rabbitmq = RabbitMQ(
     queue_name = var.QUEUE_NAME, 
     target_queue_name = var.TARGET_QUEUE_NAME, 
@@ -52,6 +53,7 @@ kerberos_vault = KerberosVault(
 
 
 while True:
+    
     # Receive message from the queue, and retrieve the media from the Kerberos Vault utilizing the message information.
     if var.LOGGING:
         print('1) Receiving message from RabbitMQ')
@@ -67,14 +69,17 @@ while True:
         message = message, 
         media_type = 'video', 
         media_savepath = var.MEDIA_SAVEPATH)
-    
+
 
     if var.TIME_VERBOSE:
         start_time = time.time()
+        total_time_preprocessing = 0
         total_time_class_prediction = 0
         total_time_color_prediction = 0
         total_time_processing = 0
         total_time_postprocessing = 0
+
+        start_time_preprocessing = time.time()
 
 
     # Perform object classification on the media
@@ -107,8 +112,9 @@ while True:
 
     if var.FIND_DOMINANT_COLORS:
         color_detector = FindObjectColors(
-            downsample_factor = 0.5,
-            max_clusters = 6,
+            downsample_factor = 0.7,
+            min_clusters= var.MIN_CLUSTERS,
+            max_clusters = var.MAX_CLUSTERS,
             )
 
 
@@ -132,6 +138,9 @@ while True:
     MAX_FRAME_NUMBER = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     if var.LOGGING:
         print(f'5) Classifying frames')
+    if var.TIME_VERBOSE:
+        total_time_preprocessing += time.time() - start_time_preprocessing
+        start_time_processing = time.time()
     while (predicted_frames < var.MAX_NUMBER_OF_PREDICTIONS) and (frame_number < MAX_FRAME_NUMBER):
 
 
@@ -169,8 +178,6 @@ while True:
             # Otherwise, the postprocessing should not be done.
             # Iterate over the detected objects and their masks.
             if results is not None:
-                if var.TIME_VERBOSE:
-                    start_time_processing = time.time()
                 # Loop over boxes and masks.
                 # If no masks are found, meaning the model used is not a segmentation model, the mask is set to None.
                 for box, mask in zip(results[0].boxes, results[0].masks or [None] * len(results[0].boxes)):
@@ -274,9 +281,9 @@ while True:
         frame_number += 1
 
 
-        if var.TIME_VERBOSE:
-            total_time_processing += time.time() - start_time_processing
-            start_time_postprocessing = time.time()
+    if var.TIME_VERBOSE:
+        total_time_processing += time.time() - start_time_processing
+        start_time_postprocessing = time.time()
 
 
     # Depending on the CREATE_BBOX_FRAME parameter, the bbox_frame is annotated.
@@ -331,10 +338,13 @@ while True:
 
     # Depending on the TIME_VERBOSE parameter, the time it took to classify the objects is printed.
     if var.TIME_VERBOSE:
-        print(f'\t - Classification took: {round(time.time() - start_time, 1)} seconds, @ {var.CLASSIFICATION_FPS} fps.') 
-        print(f'\t\t - {round(total_time_class_prediction, 2)}s for class prediction')
-        print(f'\t\t - {round(total_time_processing, 2)}s processing of which {round(total_time_color_prediction, 2)}s for color prediction') 
-        print(f'\t\t - {round(total_time_postprocessing, 2)}s postprocessing')
+        print(f'\t - Classification took: {round(time.time() - start_time, 1)} seconds, @ {var.CLASSIFICATION_FPS} fps.')
+        print(f'\t\t - {round(total_time_preprocessing, 2)}s for preprocessing and initialisation') 
+        print(f'\t\t - {round(total_time_processing, 2)}s for processing of which:')
+        print(f'\t\t\t - {round(total_time_class_prediction, 2)}s for class prediction')
+        print(f'\t\t\t - {round(total_time_color_prediction, 2)}s for color prediction')
+        print(f'\t\t\t - {round(total_time_processing - total_time_class_prediction - total_time_color_prediction, 2)}s for other processing')
+        print(f'\t\t - {round(total_time_postprocessing, 2)}s for postprocessing')
         print(f'\t - Original video: {round(cap.get(cv2.CAP_PROP_FRAME_COUNT)/cap.get(cv2.CAP_PROP_FPS), 1)} seconds, @ {round(cap.get(cv2.CAP_PROP_FPS), 1)} fps @ {int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))}. File size of {round(os.path.getsize(var.MEDIA_SAVEPATH)/1024**2, 1)} MB')
 
 

@@ -58,6 +58,8 @@ class VariableClass:
 
         self.FIND_DOMINANT_COLORS = os.getenv("FIND_DOMINANT_COLORS") == "True"
         self.COLOR_PREDICTION_INTERVAL = int(os.getenv("COLOR_PREDICTION_INTERVAL"))
+        self.MIN_CLUSTERS = int(os.getenv("MIN_CLUSTERS"))
+        self.MAX_CLUSTERS = int(os.getenv("MAX_CLUSTERS"))
 
         # Classification parameters
         self.CLASSIFICATION_FPS = int(os.getenv("CLASSIFICATION_FPS"))
