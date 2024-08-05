@@ -9,6 +9,8 @@ The repository includes all the scripts necessary for object classification, uti
 To correctly install the necessary dependencies, run the following command. It is recommended to use a virtual environment for this process:
 
 ```sh
+python -m venv venv
+source ./venv/bin/activate
 pip install -r requirements.txt
 ```
 
