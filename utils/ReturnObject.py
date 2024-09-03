@@ -26,9 +26,10 @@ class ReturnJSON:
         :param det_obj: ClassificationObject whose characteristics should be saved in the ReturnJSON object.
 
         """
-
-        self.return_object['data']['objectCount'] += 1
-        self.return_object['data']['properties'].append(det_obj.object_name)
+        
+        if not det_obj.is_static:
+            self.return_object['data']['objectCount'] += 1
+            self.return_object['data']['properties'].append(det_obj.object_name)
 
         details_dict = {'id': str(det_obj.id),
                         'classified': det_obj.object_name,
