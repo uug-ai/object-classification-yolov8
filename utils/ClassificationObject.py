@@ -199,7 +199,7 @@ class ClassificationObject:
 
         """
 
-        if self.static_distance <= int(os.getenv('MIN_STATIC_DISTANCE')) and self.distance >= int(os.getenv('MIN_DISTANCE')):
+        if self.static_distance <= int(os.getenv('MIN_STATIC_DISTANCE')):
             self.is_static = True
         else:
             self.is_static = False
