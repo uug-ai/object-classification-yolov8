@@ -25,7 +25,7 @@ from uugai_python_kerberos_vault.KerberosVault import KerberosVault
 
 # Following error is thrown: [W NNPACK.cpp:64] Could not initialize NNPACK! Reason: Unsupported hardware.
 # https://stackoverflow.com/questions/69711410/could-not-initialize-nnpack
-torch.backends.nnpack.enabled = False
+# torch.backends.nnpack.enabled = False
 
 # Initialize the VariableClass object, which contains all the necessary environment variables.
 var = VariableClass()

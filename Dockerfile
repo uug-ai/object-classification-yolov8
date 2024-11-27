@@ -15,7 +15,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 WORKDIR /usr/src/ultralytics
 
 # Clone the repository
-RUN git clone https://github.com/ultralytics/ultralytics -b main /usr/src/ultralytics
+RUN git clone https://github.com/ultralytics/ultralytics /usr/src/ultralytics
+# Checkout tag v8.1.0
+RUN cd /usr/src/ultralytics && git checkout v8.1.0
 
 # Add yolov8n.pt model
 ADD https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt /usr/src/ultralytics/
